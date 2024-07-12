@@ -4,17 +4,25 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { body, validationResult } = require('express-validator');
+const authUser = require('../middleware/authUser');
 
-//ROUTE - 2 : login
+//ROUTE - 1 : login
 router.post('/sign-up', [
     body('fname').isLength({ min : 3 }).withMessage('First name must be atleast 3 charecters long'),
     body('email').isEmail().withMessage('Enter valid email!'),
-    body('password').isStrongPassword().isLength({ min : 5 }).withMessage('Enter Valid password must be atlease 5 charecters')
+    body('password').isLength({ min : 5 }).withMessage('Enter Valid password must be atlease 5 charecters')
 ], async (req, res) => {
     try {
         let success = false;
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            return res.status(400).json({
+                code: 400,
+                message: errors.array()[0].msg,
+                success: false
+            });
+        }
         const { fname, lname, email, password } = req.body;
-        const hasPassword = await bcrypt.hash(password, 10);
         const existEmail = await User.find({email});
         if(existEmail.length !== 0){
             return res.status(400).json({
@@ -23,6 +31,7 @@ router.post('/sign-up', [
                 success
             })  
         }
+        const hasPassword = await bcrypt.hash(password, 10);
         const user = await User.create({
             fname,
             lname,
@@ -30,10 +39,9 @@ router.post('/sign-up', [
             password : hasPassword
         })
         if(!user){
-            return res.status().json({
-                code : 500,
-                message : `Internal Server error : ${error.message}`,
-                success
+            return res.status(404).json({
+                code : 404,
+                message : `No user found!`
             })   
         }
         const payload = {
@@ -49,7 +57,7 @@ router.post('/sign-up', [
             token : authToken
         })
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             code : 500,
             message : `Internal Server error : ${error.message}`
         })
@@ -63,7 +71,7 @@ router.post('/login', async (req, res) => {
         const { email, password } = req.body;
         const existUser = await User.findOne({email})
         if(!existUser){
-            res.status(400).json({
+            return res.status(400).json({
                 code : 400,
                 message : `Enter valid credentials to login!`,
                 success
@@ -71,7 +79,7 @@ router.post('/login', async (req, res) => {
         }
         const passwordCompare = await bcrypt.compare(password, existUser.password);
         if(!passwordCompare){
-            res.status(400).json({
+            return res.status(400).json({
                 code : 400,
                 message : `Enter valid password to login!`,
                 success
@@ -84,13 +92,85 @@ router.post('/login', async (req, res) => {
         }
         const authToken = jwt.sign(payload, process.env.JWT_SECRET_KEY);
         return res.status(200).json({
-            code : 200,
+            code : 200, 
             message : `Login successfully!`,
             token : authToken,
             success : true
         })
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
+            code : 500,
+            message : `Internal Server error : ${error.message}`
+        })
+    }
+})
+
+//ROUTE : 3 - change password with user id
+router.post('/change-password', authUser, async (req, res) => {
+    try {
+        // getting user id from auth-token through middleware : authUser
+        const authUserId = req.user.id;
+        const { oldPassword, newPassword } = req.body;
+        const user = await User.findById(authUserId);
+        if(!user){
+            return res.status(404).json({
+                code : 404,
+                mesage : `User is not founded!`
+            })
+        }
+        const comparedPassword = await bcrypt.compare(oldPassword, user.password);
+        if(!comparedPassword){
+            return res.status(400).json({
+                code : 400,
+                message : `Password is invalid!`
+            })
+        }
+        //save new entered password
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.save();
+        return res.status(200).json({
+            code : 200,
+            message : `Password changed successfully!`,
+            data : user
+        })
+    } catch (error) {
+        return res.status(500).json({
+            code : 500,
+            message : `Internal Server error : ${error.message}`
+        })
+    }
+})
+
+//ROUTE : 4 - TForget password API -> To-Do
+
+//ROUTE : 5 - update userponits
+router.put('/user-points/:uPoints', authUser, async (req, res) => {
+    try {
+        const { uPoints } = req.params;
+        if(!uPoints){
+            return res.status(400).json({
+                code : 400,
+                message : `Enter valid user points in params!`
+            })
+        }
+        const authUserId = req.user.id;
+        const updatePointsUser = await User.findById(authUserId);
+        if(!updatePointsUser){
+            return res.status(404).json({
+                code : 404,
+                message : `No user found!`
+            })
+        }
+        updatePointsUser.userPoints += Number(uPoints);
+        updatePointsUser.save()
+        return res.status(200).json({
+            code : 200,
+            message : `User points updated successfully!`,
+            data : updatePointsUser
+        })
+
+    } catch (error) {
+        return res.status(500).json({
             code : 500,
             message : `Internal Server error : ${error.message}`
         })
@@ -98,3 +178,5 @@ router.post('/login', async (req, res) => {
 })
 
 module.exports = router;
+
+// body('password').isStrongPassword({ pointsForContainingNumber : 2, pointsForContainingUpper : 2}).isLength({ min : 5 }).withMessage('Enter Valid password must be atlease 5 charecters')

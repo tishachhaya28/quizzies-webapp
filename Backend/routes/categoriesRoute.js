@@ -30,12 +30,37 @@ router.post('/add-qiz-ctgry', async (req, res) => {
             message: 'Successful',
             data: ctgryData
         });
+
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             code: 500,
             message: `Internal Server Error: ${error.message}`
         });
     }
 });
+
+router.get('/get-quiz-categories', async (req, res) => {
+    try {
+        const quizCategories = await QuizCategory.find({}, { _id: 0, __v: 0 });
+        if (!quizCategories) {
+            return res.status(404).json({
+                code: 404,
+                message: `No data found!`
+            });
+        }
+
+        return res.status(200).json({
+            code: 200,
+            message: `All data get successfully!`,
+            data: quizCategories
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            code: 500,
+            message: `Internal Server Error: ${error.message}`
+        });
+    }
+})
 
 module.exports = router;
