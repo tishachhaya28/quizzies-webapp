@@ -1,12 +1,16 @@
+require('dotenv').config();
 const connectToMongoose = require('./database');
 connectToMongoose();
 
 const express = require('express');
 const app = express();
+const cors = require('cors');
 
-require('dotenv').config();
 const port = process.env.PORT || 8001;
-const bodyParser = require('body-parser')
+console.log("port " + process.env.PORT);
+const bodyParser = require('body-parser');
+
+app.use(cors());
 
 const userRoute = require('./routes/userRoute');
 const quizCtgrRoute = require('./routes/categoriesRoute');
@@ -30,5 +34,5 @@ app.use('/api/questions/', questionRoute);
 app.use('/api/user-profile/', profileRoute);
 
 app.listen(port, () => {
-    console.log(`Server is running on port : http://localhost:${port}`);
+    console.log(`Server is running on port: http://localhost:${port}`);
 });

@@ -1,23 +1,24 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchHomeData } from './redux-store/slice/homeSlice';
 
 function App() {
+  const dispatch = useDispatch();
+  // const state = useSelector(state => state.home); // Accessing the 'home' slice
+  // const { isLoading, isError, homeData } = state
+  const isLoading = useSelector(state => state.home.isLoading);
+  const isError = useSelector(state => state.home.isError);
+  const homeData = useSelector(state => state.home.homeData);
+  useEffect(() => {
+    dispatch(fetchHomeData());
+  }, [dispatch]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <h1>Home</h1>
+      {isLoading && <p>Loading...</p>}
+      {isError && <p>Error loading data.</p>}
+      {homeData && <p>{homeData.map(d => d.heading)}</p>}
     </div>
   );
 }
