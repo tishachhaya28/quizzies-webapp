@@ -1,16 +1,20 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchHomeData } from './redux-store/slice/homeSlice';
+// import { fetchHomeData } from './redux-store/slice/homeSlice';
+// import { fetchCategoriesData } from './redux-store/slice/categoriesSlice';
+// import { fetchContactData } from './redux-store/slice/contactSlice';
+// import { fetchLeaderBoardData } from './redux-store/slice/leadeboardSlice';
+import { fetchProfileData } from './redux-store/slice/profileSlice';
 
 function App() {
   const dispatch = useDispatch();
   // const state = useSelector(state => state.home); // Accessing the 'home' slice
   // const { isLoading, isError, homeData } = state
-  const isLoading = useSelector(state => state.home.isLoading);
-  const isError = useSelector(state => state.home.isError);
-  const homeData = useSelector(state => state.home.homeData);
+  const isLoading = useSelector(state => state.profile.isLoading);
+  const isError = useSelector(state => state.profile.isError);
+  const profileData = useSelector(state => state.profile.profileData);
   useEffect(() => {
-    dispatch(fetchHomeData());
+    dispatch(fetchProfileData());
   }, [dispatch]);
 
   return (
@@ -18,7 +22,7 @@ function App() {
       <h1>Home</h1>
       {isLoading && <p>Loading...</p>}
       {isError && <p>Error loading data.</p>}
-      {homeData && <p>{homeData.map(d => d.heading)}</p>}
+      {profileData && <p>{profileData.fname}</p>}
     </div>
   );
 }

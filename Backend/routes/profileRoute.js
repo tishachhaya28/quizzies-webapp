@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const authUser = require('../middleware/authUser');
 
-router.get('/profile', async (req, res) => {
+router.get('/profile', authUser, async (req, res) => {
     try {
         const userId = req.user.id;
         if(!userId){
@@ -13,6 +13,18 @@ router.get('/profile', async (req, res) => {
                 message: `Sign in to see information!`
             });
         }
+        const user = await User.findById({_id : userId});
+        if(!user){
+            return res.status(404).json({
+                code : 404,
+                message : `User is not found!`
+            })
+        }
+        return res.status(200).json({
+            code : 200,
+            message : `User get succesfully`,
+            data : user
+        })
         // const userData = 
     } catch (error) {
         return res.status(500).json({
